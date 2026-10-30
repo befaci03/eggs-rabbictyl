@@ -1,0 +1,32 @@
+# CreeperSRV, a Go webserver ("nginx like webserver, but better") from
+# https://git.creepernet.bond/creeper/CreeperSRV. The install script clones the
+# repository, builds cmd/creepersrv and keeps the binary plus the default
+# config in /home/container.
+
+id = "creepersrv"
+name = "CreeperSRV"
+author = "RabbiCtyl"
+description = "CreeperSRV web servers"
+
+[[egg]]
+id = "creepersrv"
+name = "CreeperSRV"
+description = "Builds CreeperSRV from source. Configure sites, ports, CScript and CSecure in creepersrv.json; websites live in their own directories under /home/container."
+docker_image = "debian:12"
+startup = "sh -c 'if [ -x ./creepersrv ]; then exec ./creepersrv; elif [ -f go.mod ]; then exec go run ./cmd/creepersrv; else echo \"creepersrv binary missing - run the install script\" >&2; exit 1; fi'"
+script_container = "golang:1.27"
+script_entrypoint = "sh"
+script_install = """
+#!/bin/sh
+set -e
+rm -rf /tmp/creepersrv
+git clone --depth 1 https://git.creepernet.bond/creeper/CreeperSRV /tmp/creepersrv
+(cd /tmp/creepersrv && go build -o /home/container/creepersrv ./cmd/creepersrv)
+if [ ! -f /home/container/creepersrv.json ] && [ -f /tmp/creepersrv/creepersrv.json ]; then
+  cp /tmp/creepersrv/creepersrv.json /home/container/creepersrv.json
+fi
+rm -rf /tmp/creepersrv
+echo "Built CreeperSRV; config: /home/container/creepersrv.json"
+"""
+
+[egg.variables]
